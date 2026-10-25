@@ -30,6 +30,7 @@ const launcherStateSchema = z.object({
   revision: z.string(),
   version: z.string().default("development"),
   packageTarget: z.string().optional(),
+  controlPort: z.number().int().optional(),
   debug: z.boolean().optional(),
   lan: z.object({
     addresses: z.array(z.object({ address: z.string(), name: z.string() })),
@@ -58,6 +59,7 @@ export function AppLauncherPage() {
   const [update, setUpdate] = useState<ReleaseUpdateNotice | null>(null);
   const [version, setVersion] = useState<string>();
   const [target, setTarget] = useState<string>();
+  const [controlPort, setControlPort] = useState<number>();
   const [siteBusy, setSiteBusy] = useState(false);
   const [siteError, setSiteError] = useState<string>();
   // Background reads cannot replace a newer command's result or optimistic state.
@@ -110,6 +112,7 @@ export function AppLauncherPage() {
           restoredSettings = true;
         }
         setVersion(state.version);
+        setControlPort(state.controlPort);
         setTarget(state.target);
         setStarting(state.starting === true);
         setSites(state.sites);
@@ -182,7 +185,7 @@ export function AppLauncherPage() {
         ...(theme !== null ? ["theme" as const] : []),
       ],
     };
-    return clientLaunchURL(target, presentation, debug);
+    return clientLaunchURL(target, presentation, debug, controlPort);
   }
 
   async function launch(event: FormEvent<HTMLFormElement>): Promise<void> {

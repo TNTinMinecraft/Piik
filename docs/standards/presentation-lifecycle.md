@@ -71,6 +71,10 @@ precedence. The ready App button and terminal launcher address return to its
 management page in every mode. Local/public room startup is one selection per
 App run; reopening the launcher does not stop or replace that room. Changing
 between those modes requires restarting App.
+An App-launched tab selects that process's control endpoint and retains the
+selection through reloads in its Browser session. If that endpoint becomes
+unavailable, discovery stays with it; a new explicit launch selects another App.
+Endpoint selection does not grant Site access or capture permission.
 Activating a page supplies
 native capability without restarting its room or healthy media session.
 The source selector exposes that same connection action before sharing; a
@@ -123,9 +127,10 @@ share ownership and required audio tracks come from the accepted App response.
 Browser initialization failure remains distinct from capture permission failure.
 
 A reachable Piik App with an incompatible control protocol is distinct from an
-absent App. Discovery continues looking for a compatible process before reporting
-the mismatch; the source selector retains Browser operation and offers update/
-refresh guidance. Discovery metadata may grow, while known identity and capability
+absent App. Without an explicitly selected endpoint, discovery continues looking
+for a compatible process before reporting the mismatch. The source selector
+retains Browser operation and offers update/refresh guidance. Discovery metadata
+may grow, while known identity and capability
 types remain validated. Missing optional capabilities are unavailable; control
 commands and responses retain their strict protocol contract.
 An empty source list means enumeration succeeded for the selected category.

@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -287,6 +288,7 @@ func runLauncher(
 				return launcher.SaveStartupSite(configPath, site)
 			},
 			Sites: config.ApprovedSites(), Version: buildVersion(), Revision: BuildRevision,
+			ControlPort:         control.Endpoint().Port,
 			LocalAccessPassword: config.LocalAccessPassword,
 			Debug:               options.Debug, LANAddress: options.LANAddress,
 			ChangeSite: func(site string, allowed bool) ([]string, error) {
@@ -342,7 +344,7 @@ func runLauncher(
 		if !automatic {
 			site = startupSite
 		}
-		openSite(site, options)
+		openSite(site, options, control.Endpoint().Port)
 	}
 	// An interactive room is a child of the resident App. Its failure must not
 	// retire an unrelated Site's native sessions or its approval page. Explicit
@@ -497,9 +499,9 @@ func openDiagnostics(directory string) (*diagnostics.Recorder, error) {
 	return diagnostics.Open(filepath.Join(cache, "Piik", "logs"), "client", BuildRevision)
 }
 
-func openSite(site string, options Options) {
+func openSite(site string, options Options, controlPort int) {
 	slog.Debug("piik-client", "event", "mode", "mode", "site")
-	targetURL := launchURL(site)
+	targetURL := launchURL(site, controlPort)
 	view := consoleView{mode: "site", state: "ready", entry: targetURL}
 	options.console.show(view)
 	if options.console.machine {
@@ -639,6 +641,7 @@ func runLocal(ctx context.Context, options Options, config appconfig.Config,
 	launchURL := launchURLWithLocalAccess(
 		fmt.Sprintf("http://127.0.0.1:%d/", options.Port),
 		config.LocalAccessPassword,
+		control.Endpoint().Port,
 	)
 	view.state, view.entry, view.invite = "ready", launchURL, publicOrigin
 	if view.invite == "" {
@@ -672,7 +675,7 @@ func runLocal(ctx context.Context, options Options, config appconfig.Config,
 	}
 }
 
-func launchURL(raw string) string {
+func launchURL(raw string, controlPort int) string {
 	parsed, err := url.Parse(raw)
 	if err != nil {
 		return raw
@@ -682,24 +685,29 @@ func launchURL(raw string) string {
 		return raw
 	}
 	fragment.Set("piik-client", "1")
+	query := parsed.Query()
+	if controlPort >= loopback.DefaultPortStart && controlPort <= loopback.DefaultPortEnd {
+		query.Set("piik-client-port", strconv.Itoa(controlPort))
+	}
+	parsed.RawQuery = query.Encode()
 	parsed.Fragment, parsed.RawFragment = "", ""
 	return parsed.String() + "#" + fragment.Encode()
 }
 
-func launchURLWithLocalAccess(raw, password string) string {
+func launchURLWithLocalAccess(raw, password string, controlPort int) string {
+	raw = launchURL(raw, controlPort)
 	parsed, err := url.Parse(raw)
 	if err != nil {
 		return raw
 	}
 	fragment, err := url.ParseQuery(parsed.EscapedFragment())
 	if err != nil {
-		return launchURL(raw)
+		return raw
 	}
 	fragment.Del("client-access")
 	if password != "" {
 		fragment.Set("client-access", password)
 	}
-	fragment.Set("piik-client", "1")
 	parsed.Fragment, parsed.RawFragment = "", ""
 	return parsed.String() + "#" + fragment.Encode()
 }

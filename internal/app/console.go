@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -413,7 +414,11 @@ func (model consoleModel) content(styled bool) string {
 		}
 		address := consoleAddress(item[1])
 		if item[0] == "entry" {
-			address = launchURL(address)
+			port := 0
+			if source, err := url.Parse(item[1]); err == nil {
+				port, _ = strconv.Atoi(source.Query().Get("piik-client-port"))
+			}
+			address = launchURL(address, port)
 		}
 		style := link
 		if styled {

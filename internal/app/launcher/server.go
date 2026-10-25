@@ -53,6 +53,7 @@ type Options struct {
 	StartupSite         string
 	Version             string
 	Revision            string
+	ControlPort         int
 	LocalAccessPassword string
 	Debug               bool
 	LANAddress          string
@@ -76,6 +77,7 @@ type Server struct {
 	localAccessPassword string
 	version             string
 	revision            string
+	controlPort         int
 	debug               bool
 	lanAddress          string
 	changeSite          func(string, bool) ([]string, error)
@@ -129,6 +131,7 @@ func Start(parent context.Context, assets fs.FS, options Options) (*Server, erro
 		localAccessPassword: options.LocalAccessPassword,
 		version:             options.Version,
 		revision:            strings.TrimSpace(options.Revision),
+		controlPort:         options.ControlPort,
 		debug:               options.Debug,
 		lanAddress:          options.LANAddress,
 		changeSite:          options.ChangeSite,
@@ -264,6 +267,7 @@ func (server *Server) handleState(response http.ResponseWriter, request *http.Re
 		"version":             server.version,
 		"revision":            server.revision,
 		"packageTarget":       runtime.GOOS + "-" + runtime.GOARCH,
+		"controlPort":         server.controlPort,
 		"debug":               server.debug,
 		"target":              server.target,
 		"starting":            server.selected && !server.resultSet,
